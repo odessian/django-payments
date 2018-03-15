@@ -5,6 +5,7 @@ import os.path
 from django.core import signing
 from django.shortcuts import redirect
 from django.utils.translation import ugettext as _
+from django.conf import settings
 import suds.client
 from suds.sax.element import Element
 from suds.sudsobject import Object
@@ -278,35 +279,47 @@ class CyberSourceProvider(BasicProvider):
         return params
 
     def _prepare_sale(self, payment, card_data):
-        service = self.client.factory.create('data:CCCreditService')
-        service._run = 'true'
-        check_service = self.client.factory.create(
-            'data:PayerAuthEnrollService')
-        check_service._run = 'true'
         params = self._get_params_for_new_payment(payment)
         params.update({
-            'ccCreditService': service,
-            'payerAuthEnrollService': check_service,
             'billTo': self._prepare_billing_data(payment),
             'card': self._prepare_card_data(card_data),
             'item': self._prepare_items(payment),
             'purchaseTotals': self._prepare_totals(payment)})
+
+        service = self.client.factory.create('data:CCCreditService')
+        service._run = 'true'
+        params.update({
+            'ccCreditService': service})
+       
+        if settings.PAYMENT_USES_AUTH_ENROLL_SERVICE: 
+            check_service = self.client.factory.create(
+                'data:PayerAuthEnrollService')
+            check_service._run = 'true'
+            params.update({
+                'payerAuthEnrollService': check_service})
+
         return params
 
     def _prepare_preauth(self, payment, card_data):
-        service = self.client.factory.create('data:CCAuthService')
-        service._run = 'true'
-        check_service = self.client.factory.create(
-            'data:PayerAuthEnrollService')
-        check_service._run = 'true'
         params = self._get_params_for_new_payment(payment)
         params.update({
-            'ccAuthService': service,
-            'payerAuthEnrollService': check_service,
             'billTo': self._prepare_billing_data(payment),
             'card': self._prepare_card_data(card_data),
             'item': self._prepare_items(payment),
             'purchaseTotals': self._prepare_totals(payment)})
+
+        service = self.client.factory.create('data:CCAuthService')
+        service._run = 'true'
+        params.update({
+            'ccAuthService': service})
+
+        if settings.PAYMENT_USES_AUTH_ENROLL_SERVICE: 
+            check_service = self.client.factory.create(
+                'data:PayerAuthEnrollService')
+            check_service._run = 'true'
+            params.update({
+                'payerAuthEnrollService': check_service})
+
         return params
 
     def _prepare_capture(self, payment, amount=None):
