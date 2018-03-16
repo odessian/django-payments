@@ -237,7 +237,7 @@ class CyberSourceProvider(BasicProvider):
     def _get_params_for_new_payment(self, payment):
         params = {
             'merchantID': self.merchant_id,
-            'merchantReferenceCode': payment.id,
+            'merchantReferenceCode': payment.description,
         }
         try:
             fingerprint_id = payment.attrs.fingerprint_session_id
